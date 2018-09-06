@@ -86,7 +86,7 @@
         </b-row>
 
         <!-- Info modal -->
-        <b-modal id="modalInfo" @hide="resetModal" :title="modalInfo.title" ok-only>
+        <b-modal id="modalInfo" @hide="resetModal" :title="modalInfo.title" ok-only ref="myModalRef">
             <pre>{{ modalInfo.content }}</pre>
             <div v-if="updatingData">
                 <div class="d-block text-center">
@@ -96,21 +96,29 @@
                         <b-form-input v-model="modalInfo.name"
                                       type="text"
                                       placeholder="Enter  name"></b-form-input>
+                        <input type="hidden" name="id" :value="modalInfo.id">
                         <br/>
                         <b-form-input v-model="modalInfo.email"
                                       type="text"
                                       placeholder="Enter  email"></b-form-input>
                         <br/>
-                        <div>
-                            <b-form-select v-model="modalInfo.selected" :options="modalInfo.options" class="mb-3" />
-                            <div>Selected: <strong>{{ modalInfo.selected }}</strong></div>
-                        </div>
+                        <!--<div>-->
+                            <!--<b-form-select v-model="modalInfo.selected" :options="modalInfo.options" class="mb-3" />-->
+                            <!--<div>Selected: <strong>{{ modalInfo.selected }}</strong></div>-->
+                        <!--</div>-->
+                        <b-form-input v-model="modalInfo.faculty"
+                                      type="text"
+                                      placeholder="Enter faculty"></b-form-input>
                         <br/>
                         <b-form-input v-model="modalInfo.major"
                                       type="text"
                                       placeholder="Enter  major"></b-form-input>
                         <br/>
-                        <datepicker :value="state.date" ></datepicker>
+                        <b-form-input v-model="modalInfo.country"
+                                      type="text"
+                                      placeholder="Enter  Country"></b-form-input>
+                        <br/>
+                        <!--<datepicker :value="state.date" ></datepicker>-->
                     </b-form-group>
                 </div>
                 <b-btn class="mt-3" variant="outline-danger" block @click="updateData">Update</b-btn>
@@ -136,11 +144,13 @@
         },
         data () {
             return {
+                uri: 'http://laravel-angular-4-app/api/v1/students',
                 state: {
                     date: new Date(2018, 9,  16)
                 },
                 items: [],
                 fields: [
+                    { key: 'id', label: 'ID', sortable: true, sortDirection: 'desc' },
                     { key: 'name', label: 'Person Name', sortable: true, sortDirection: 'desc' },
                     { key: 'email', label: 'Person Email', sortable: true, sortDirection: 'desc' },
                     { key: 'admission_date', label: 'Admission Date', sortable: true, sortDirection: 'desc' },
@@ -160,14 +170,15 @@
                 sortDesc: false,
                 sortDirection: 'asc',
                 filter: null,
-                modalInfo: { title: '', content: '', name: '', email: '', major: '',
-                    selected: null,
-                    options: [
-                        { value: null, text: 'Please select a Faculty' },
-                        { value: 'cis', text: 'CIS' },
-                        { value: 'iesm', text: 'IESM' },
-                        { value: 'math', text: 'MATH' }
-                    ]}
+                modalInfo: { id:'', title: '', content: '', name: '', email: '', major: '', faculty: '',
+//                    selected: null,
+//                    options: [
+//                        { value: null, text: 'Please select a Faculty' },
+//                        { value: 'cis', text: 'CIS' },
+//                        { value: 'iesm', text: 'IESM' },
+//                        { value: 'math', text: 'MATH' }
+//                    ]
+                }
             }
         },
         computed: {
@@ -187,7 +198,14 @@
             update (item, index, button) {
                 this.modalInfo.title = `Update: ${index}`;
                 this.updatingData = true;
-                this.modalInfo.content = 'Updating...';
+                this.modalInfo.content = '';
+                this.modalInfo.id = item.id;
+                this.modalInfo.name = item.name;
+                this.modalInfo.email = item.email;
+                this.modalInfo.major = item.major;
+                this.modalInfo.country = item.country;
+                this.modalInfo.faculty = item.faculty;
+
                 this.$root.$emit('bv::show::modal', 'modalInfo', button)
             },
             resetModal () {
@@ -201,10 +219,27 @@
                 this.currentPage = 1
             },
             fetchINitData(){
-               axios.get('http://laravel-angular-4-app/api/v1/students').then(response => this.items = response['data']);
-               this.childDataLoaded = true;
+               axios.get(this.uri).then(response => this.items = response['data']);
             },
             updateData() {
+                let student = {
+                    'id': this.modalInfo.id,
+                    'name' : this.modalInfo.name,
+                    'email': this.modalInfo.email,
+                    'major': this.modalInfo.major,
+                    'country': this.modalInfo.country,
+//                    'date': this.modalInfo.date,
+                    'faculty': this.modalInfo.faculty
+                };
+
+                let uri = this.uri + '/' + student.id;
+
+                axios.post(uri, student )
+                    .then(() => {
+                        this.$refs.myModalRef.hide();
+                        this.fetchINitData();
+                    });
+
                 debugger;
             }
         },
