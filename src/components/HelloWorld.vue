@@ -1,7 +1,7 @@
 <template>
     <b-container fluid>
         <!-- User Interface controls -->
-        <b-row>
+        <b-row style="padding-bottom: 2%">
             <b-col md="6" class="my-1">
                 <b-form-group horizontal label="Filter" class="mb-0">
                     <b-input-group>
@@ -66,6 +66,9 @@
                 <b-button size="sm" @click.stop="row.toggleDetails">
                     {{ row.detailsShowing ? 'Hide' : 'Show' }} Details
                 </b-button>
+                <b-button size="sm" @click.stop="update(row.item, row.index, $event.target)" class="mr-1">
+                    Update
+                </b-button>
             </template>
             <template slot="row-details" slot-scope="row">
                 <b-card>
@@ -85,6 +88,33 @@
         <!-- Info modal -->
         <b-modal id="modalInfo" @hide="resetModal" :title="modalInfo.title" ok-only>
             <pre>{{ modalInfo.content }}</pre>
+            <div v-if="updatingData">
+                <div class="d-block text-center">
+                    <b-form-group
+                                   breakpoint="md"
+                            id="fieldset1">
+                        <b-form-input v-model="modalInfo.name"
+                                      type="text"
+                                      placeholder="Enter  name"></b-form-input>
+                        <br/>
+                        <b-form-input v-model="modalInfo.email"
+                                      type="text"
+                                      placeholder="Enter  email"></b-form-input>
+                        <br/>
+                        <div>
+                            <b-form-select v-model="modalInfo.selected" :options="modalInfo.options" class="mb-3" />
+                            <div>Selected: <strong>{{ modalInfo.selected }}</strong></div>
+                        </div>
+                        <br/>
+                        <b-form-input v-model="modalInfo.major"
+                                      type="text"
+                                      placeholder="Enter  major"></b-form-input>
+                        <br/>
+                        <datepicker :value="state.date" ></datepicker>
+                    </b-form-group>
+                </div>
+                <b-btn class="mt-3" variant="outline-danger" block @click="updateData">Update</b-btn>
+            </div>
         </b-modal>
 
     </b-container>
@@ -92,22 +122,36 @@
 
 <script>
     import axios from 'axios'
+    import Datepicker from 'vuejs-datepicker';
+
 
     const items = [
 
     ];
 
+
     export default {
+        components: {
+            Datepicker
+        },
         data () {
             return {
+                state: {
+                    date: new Date(2018, 9,  16)
+                },
                 items: [],
                 fields: [
                     { key: 'name', label: 'Person Name', sortable: true, sortDirection: 'desc' },
                     { key: 'email', label: 'Person Email', sortable: true, sortDirection: 'desc' },
                     { key: 'admission_date', label: 'Admission Date', sortable: true, sortDirection: 'desc' },
+                    { key: 'faculty', label: 'Faculty', sortable: true, sortDirection: 'desc' },
+                    { key: 'major', label: 'Major', sortable: true, sortDirection: 'desc' },
+                    { key: 'country', label: 'Country', sortable: true, sortDirection: 'desc' },
+                    { key: 'updated_at', label: 'Updated At', sortable: true, sortDirection: 'desc' },
                     { key: 'actions', label: 'Actions' }
 
                 ],
+                updatingData: false,
                 currentPage: 1,
                 perPage: 2,
                 totalRows: items.length,
@@ -116,7 +160,14 @@
                 sortDesc: false,
                 sortDirection: 'asc',
                 filter: null,
-                modalInfo: { title: '', content: '' }
+                modalInfo: { title: '', content: '', name: '', email: '', major: '',
+                    selected: null,
+                    options: [
+                        { value: null, text: 'Please select a Faculty' },
+                        { value: 'cis', text: 'CIS' },
+                        { value: 'iesm', text: 'IESM' },
+                        { value: 'math', text: 'MATH' }
+                    ]}
             }
         },
         computed: {
@@ -133,9 +184,16 @@
                 this.modalInfo.content = JSON.stringify(item, null, 2)
                 this.$root.$emit('bv::show::modal', 'modalInfo', button)
             },
+            update (item, index, button) {
+                this.modalInfo.title = `Update: ${index}`;
+                this.updatingData = true;
+                this.modalInfo.content = 'Updating...';
+                this.$root.$emit('bv::show::modal', 'modalInfo', button)
+            },
             resetModal () {
-                this.modalInfo.title = ''
-                this.modalInfo.content = ''
+                this.modalInfo.title = '';
+                this.modalInfo.content = '';
+                this.updatingData = false;
             },
             onFiltered (filteredItems) {
                 // Trigger pagination to update the number of buttons/pages due to filtering
@@ -145,6 +203,9 @@
             fetchINitData(){
                axios.get('http://laravel-angular-4-app/api/v1/students').then(response => this.items = response['data']);
                this.childDataLoaded = true;
+            },
+            updateData() {
+                debugger;
             }
         },
         mounted() {
