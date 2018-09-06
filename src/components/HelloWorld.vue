@@ -91,6 +91,10 @@
         <!-- Info modal -->
         <b-modal id="modalInfo" @hide="resetModal" :title="modalInfo.title" ok-only ref="myModalRef">
             <pre>{{ modalInfo.content }}</pre>
+            <div v-if="deletingData">
+                Are you sure you want to delete this data?
+                <b-btn class="mt-3" variant="outline-danger" block @click="deleteData">Delete</b-btn>
+            </div>
             <div v-if="updatingData">
                 <div class="d-block text-center">
                     <b-form-group
@@ -165,6 +169,7 @@
 
                 ],
                 updatingData: false,
+                deletingData: false,
                 currentPage: 1,
                 perPage: 2,
                 totalRows: items.length,
@@ -212,12 +217,13 @@
                 this.$root.$emit('bv::show::modal', 'modalInfo', button)
             },
             del(item, index, button) {
-                this.modalInfo.content = 'Are you sure you want to delete this item?';
+                this.modalInfo.content = '';
                 this.modalInfo.delete_item = true;
                 this.modalInfo.id = item.id;
+                this.deletingData = true;
                 this.$root.$emit('bv::show::modal', 'modalInfo', button)
             },
-            resetModal () {
+            deleteData() {
                 if(this.modalInfo.delete_item){
                     axios
                         .delete(this.uri + '/' + this.modalInfo.id )
@@ -227,6 +233,8 @@
                         });
                     ;
                 }
+            },
+            resetModal () {
                 this.modalInfo.title = '';
                 this.modalInfo.content = '';
                 this.updatingData = false;
