@@ -69,6 +69,9 @@
                 <b-button size="sm" @click.stop="update(row.item, row.index, $event.target)" class="mr-1">
                     Update
                 </b-button>
+                <b-button size="sm" @click.stop="del(row.item, row.index, $event.target)" class="mr-1">
+                    Delete
+                </b-button>
             </template>
             <template slot="row-details" slot-scope="row">
                 <b-card>
@@ -157,7 +160,7 @@
                     { key: 'faculty', label: 'Faculty', sortable: true, sortDirection: 'desc' },
                     { key: 'major', label: 'Major', sortable: true, sortDirection: 'desc' },
                     { key: 'country', label: 'Country', sortable: true, sortDirection: 'desc' },
-                    { key: 'updated_at', label: 'Updated At', sortable: true, sortDirection: 'desc' },
+//                    { key: 'updated_at', label: 'Updated At', sortable: true, sortDirection: 'desc' },
                     { key: 'actions', label: 'Actions' }
 
                 ],
@@ -208,7 +211,22 @@
 
                 this.$root.$emit('bv::show::modal', 'modalInfo', button)
             },
+            del(item, index, button) {
+                this.modalInfo.content = 'Are you sure you want to delete this item?';
+                this.modalInfo.delete_item = true;
+                this.modalInfo.id = item.id;
+                this.$root.$emit('bv::show::modal', 'modalInfo', button)
+            },
             resetModal () {
+                if(this.modalInfo.delete_item){
+                    axios
+                        .delete(this.uri + '/' + this.modalInfo.id )
+                        .then(() => {
+                            this.$refs.myModalRef.hide();
+                            this.fetchINitData();
+                        });
+                    ;
+                }
                 this.modalInfo.title = '';
                 this.modalInfo.content = '';
                 this.updatingData = false;
@@ -239,8 +257,6 @@
                         this.$refs.myModalRef.hide();
                         this.fetchINitData();
                     });
-
-                debugger;
             }
         },
         mounted() {
