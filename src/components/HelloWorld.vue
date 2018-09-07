@@ -43,6 +43,10 @@
             </b-col>
         </b-row>
 
+
+        <b-btn class="mt-3" variant="outline-danger" block @click="addData($event.target)" style="width:20%">Add</b-btn>
+        <br/>
+
         <!-- Main table element -->
         <b-table show-empty
                  stacked="md"
@@ -88,6 +92,7 @@
             </b-col>
         </b-row>
 
+
         <!-- Info modal -->
         <b-modal id="modalInfo" @hide="resetModal" :title="modalInfo.title" ok-only ref="myModalRef">
             <pre>{{ modalInfo.content }}</pre>
@@ -95,7 +100,7 @@
                 Are you sure you want to delete this data?
                 <b-btn class="mt-3" variant="outline-danger" block @click="deleteData">Delete</b-btn>
             </div>
-            <div v-if="updatingData">
+            <div v-if="updatingData || addingData">
                 <div class="d-block text-center">
                     <b-form-group
                                    breakpoint="md"
@@ -128,7 +133,12 @@
                         <!--<datepicker :value="state.date" ></datepicker>-->
                     </b-form-group>
                 </div>
-                <b-btn class="mt-3" variant="outline-danger" block @click="updateData">Update</b-btn>
+                <div v-if="updatingData">
+                   <b-btn class="mt-3" variant="outline-danger" block @click="updateData">Update</b-btn>
+                </div>
+                <div v-if="addingData">
+                    <b-btn class="mt-3" variant="outline-danger" block @click="appendData">Add</b-btn>
+                </div>
             </div>
         </b-modal>
 
@@ -170,6 +180,7 @@
                 ],
                 updatingData: false,
                 deletingData: false,
+                addingData: false,
                 currentPage: 1,
                 perPage: 2,
                 totalRows: items.length,
@@ -223,6 +234,34 @@
                 this.deletingData = true;
                 this.$root.$emit('bv::show::modal', 'modalInfo', button)
             },
+            appendData(){
+              let student = {
+                 'name': this.modalInfo.name,
+                 'email' : this.modalInfo.email,
+                 'major' : this.modalInfo.major,
+                 'country' : this.modalInfo.country,
+                 'faculty' :  this.modalInfo.faculty
+              };
+
+            axios.post(this.uri, student)
+                .then(() => {
+                    this.$refs.myModalRef.hide();
+                    this.fetchINitData();
+                });
+            },
+            addData(button){
+                this.modalInfo.title = `Add:`;
+                this.addingData = true;
+                this.modalInfo.content = '';
+                this.modalInfo.id = '';
+                this.modalInfo.name = '';
+                this.modalInfo.email = '';
+                this.modalInfo.major = '';
+                this.modalInfo.country = '';
+                this.modalInfo.faculty = '';
+
+                this.$root.$emit('bv::show::modal', 'modalInfo', button)
+            },
             deleteData() {
                 if(this.modalInfo.delete_item){
                     axios
@@ -231,13 +270,16 @@
                             this.$refs.myModalRef.hide();
                             this.fetchINitData();
                         });
-                    ;
+
                 }
             },
             resetModal () {
                 this.modalInfo.title = '';
                 this.modalInfo.content = '';
                 this.updatingData = false;
+                this.addingData = false;
+                this.deletingData = false;
+
             },
             onFiltered (filteredItems) {
                 // Trigger pagination to update the number of buttons/pages due to filtering
